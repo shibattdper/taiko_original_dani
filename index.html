@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自作段位 お題生成所</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Yuji+Syuku&family=Shippori+Mincho:wght@500;600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+:root{
+  --sumi:#1b1612;          /* 墨地 */
+  --sumi2:#251d18;
+  --washi:#efe6d2;         /* 和紙 */
+  --washi-dark:#e3d6ba;
+  --ink:#2c241d;           /* 文字 */
+  --ink-soft:#6f6253;
+  --shu:#c0392b;           /* 朱 */
+  --shu-deep:#982a20;
+  --ai:#2f4f6b;            /* 藍 */
+  --kin:#b08a2e;           /* 金 */
+  --line:#cdbf9f;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:"Zen Kaku Gothic New",sans-serif;
+  color:var(--washi);
+  background:
+    radial-gradient(120% 90% at 50% -10%, #2a201a 0%, var(--sumi) 55%) fixed;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:860px;margin:0 auto;padding:34px 18px 80px;}
+
+/* ── header ── */
+.eyebrow{
+  font-size:12px;letter-spacing:.34em;color:var(--kin);
+  text-align:center;margin:0 0 10px;font-weight:500;
+}
+.eyebrow .dot{color:var(--shu);margin:0 .5em;}
+h1{
+  font-family:"Yuji Syuku",serif;font-weight:400;
+  text-align:center;margin:0;line-height:1.05;
+  font-size:clamp(40px,9vw,72px);
+  color:var(--washi);
+  text-shadow:0 2px 0 rgba(0,0,0,.35);
+}
+.lede{
+  text-align:center;color:var(--ink-soft);
+  max-width:34em;margin:14px auto 0;font-size:14px;line-height:1.7;
+  color:#a99c86;
+}
+
+/* ── panel (washi) ── */
+.panel{
+  background:
+    linear-gradient(0deg,rgba(0,0,0,.025),rgba(0,0,0,.025)),
+    var(--washi);
+  background-blend-mode:multiply;
+  color:var(--ink);
+  border-radius:4px;
+  margin-top:30px;
+  padding:26px 24px 28px;
+  box-shadow:0 18px 40px -22px rgba(0,0,0,.7), 0 2px 0 var(--washi-dark);
+  position:relative;
+}
+.panel::after{ /* かすかな縁取り */
+  content:"";position:absolute;inset:7px;border:1px solid rgba(180,160,120,.45);
+  border-radius:2px;pointer-events:none;
+}
+.panel-head{
+  font-family:"Shippori Mincho",serif;font-weight:800;
+  font-size:15px;letter-spacing:.12em;color:var(--ink);
+  display:flex;align-items:center;gap:10px;margin:0 0 18px;
+}
+.panel-head::before{content:"";width:5px;height:18px;background:var(--shu);display:inline-block;border-radius:1px;}
+
+/* ── slot config ── */
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.slot{
+  background:rgba(255,255,255,.4);
+  border:1px solid var(--line);
+  border-radius:3px;padding:13px 13px 15px;
+}
+.slot-no{
+  font-family:"Yuji Syuku",serif;font-size:17px;color:var(--shu-deep);
+  margin:0 0 11px;letter-spacing:.08em;
+}
+label{display:block;font-size:11.5px;color:var(--ink-soft);font-weight:500;margin:11px 0 5px;letter-spacing:.05em;}
+.slot label:first-of-type{margin-top:0;}
+select,input[type=number]{
+  width:100%;font-family:inherit;font-size:14px;color:var(--ink);
+  background:#fff;border:1px solid var(--line);border-radius:3px;
+  padding:8px 9px;appearance:none;
+}
+select{
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-soft) 50%),linear-gradient(135deg,var(--ink-soft) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 16px,calc(100% - 10px) 16px;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  cursor:pointer;
+}
+select:focus-visible,input:focus-visible{outline:2px solid var(--ai);outline-offset:1px;}
+
+/* ── thresholds ── */
+.thresh{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;}
+.thresh .box{background:rgba(255,255,255,.4);border:1px solid var(--line);border-radius:3px;padding:13px 14px 15px;}
+.thresh .ttl{font-family:"Shippori Mincho",serif;font-weight:800;font-size:14px;margin:0 0 4px;}
+.thresh .ka .ttl{color:var(--ai);}
+.thresh .fk .ttl{color:var(--shu-deep);}
+.thresh .hint{font-size:11px;color:var(--ink-soft);margin:0 0 9px;}
+.range{display:flex;align-items:center;gap:8px;}
+.range span{font-size:12px;color:var(--ink-soft);}
+.range input{width:100%;}
+
+/* ── generate button ── */
+.go-row{margin-top:24px;text-align:center;}
+button.go{
+  font-family:"Yuji Syuku",serif;font-size:24px;letter-spacing:.18em;
+  color:var(--washi);background:var(--shu);
+  border:none;border-radius:3px;cursor:pointer;
+  padding:15px 54px;position:relative;
+  box-shadow:0 6px 0 var(--shu-deep), 0 14px 22px -10px rgba(192,57,43,.7);
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+button.go:hover{transform:translateY(-1px);box-shadow:0 7px 0 var(--shu-deep),0 16px 26px -10px rgba(192,57,43,.7);}
+button.go:active{transform:translateY(4px);box-shadow:0 2px 0 var(--shu-deep);}
+button.go:focus-visible{outline:3px solid var(--kin);outline-offset:3px;}
+.err{color:var(--shu);font-size:13px;text-align:center;margin:14px 0 0;min-height:1em;font-weight:500;}
+
+/* ── output scroll ── */
+.scroll{margin-top:30px;display:none;}
+.scroll.show{display:block;animation:unfurl .5s ease both;}
+@keyframes unfurl{from{opacity:0;transform:translateY(14px) scaleY(.96);transform-origin:top;}to{opacity:1;transform:none;}}
+.scroll-head{
+  font-family:"Yuji Syuku",serif;font-size:clamp(26px,6vw,38px);
+  text-align:center;color:var(--washi);margin:0 0 4px;
+}
+.scroll-sub{text-align:center;color:var(--kin);font-size:12px;letter-spacing:.3em;margin:0 0 22px;}
+
+.fuda{
+  background:var(--washi);color:var(--ink);
+  border-radius:3px;margin-bottom:14px;
+  display:grid;grid-template-columns:64px 1fr auto;align-items:center;gap:14px;
+  padding:16px 18px;position:relative;overflow:hidden;
+  box-shadow:0 12px 28px -18px rgba(0,0,0,.7);
+  animation:cardIn .45s ease both;
+}
+.fuda:nth-child(2){animation-delay:.05s;}
+.fuda:nth-child(3){animation-delay:.12s;}
+.fuda:nth-child(4){animation-delay:.19s;}
+@keyframes cardIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:none;}}
+.fuda::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--ai);}
+.kanmuri{
+  font-family:"Yuji Syuku",serif;font-size:13px;color:#fff;
+  background:var(--ai);border-radius:50%;width:54px;height:54px;
+  display:flex;align-items:center;justify-content:center;line-height:1.1;text-align:center;
+  letter-spacing:.04em;
+}
+.song-main .nm{font-family:"Shippori Mincho",serif;font-weight:800;font-size:21px;line-height:1.25;}
+.song-main .meta{font-size:12.5px;color:var(--ink-soft);margin-top:5px;letter-spacing:.03em;}
+.song-main .meta b{color:var(--ink);font-weight:700;}
+.song-main .lv{display:inline-block;background:var(--ink);color:var(--washi);font-size:11px;padding:2px 8px;border-radius:2px;margin-left:8px;letter-spacing:.05em;}
+.song-main .ura{color:var(--shu);font-weight:700;font-size:.7em;margin-left:3px;}
+
+/* 朱印（順番） */
+.seal{
+  width:60px;height:60px;border:2.5px solid var(--shu);border-radius:6px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:var(--shu);position:relative;flex:none;
+  animation:stamp .35s cubic-bezier(.2,1.5,.5,1) both;
+}
+.fuda:nth-child(2) .seal{animation-delay:.18s;}
+.fuda:nth-child(3) .seal{animation-delay:.25s;}
+.fuda:nth-child(4) .seal{animation-delay:.32s;}
+@keyframes stamp{0%{opacity:0;transform:scale(1.9) rotate(-12deg);}60%{opacity:1;}100%{opacity:1;transform:none;}}
+.seal .num{font-family:"Shippori Mincho",serif;font-weight:800;font-size:24px;line-height:1;}
+.seal .lab{font-size:9px;letter-spacing:.1em;margin-top:2px;}
+.reroll{
+  position:absolute;top:8px;right:10px;background:none;border:none;cursor:pointer;
+  color:var(--ink-soft);font-size:18px;padding:2px 4px;border-radius:3px;line-height:1;
+}
+.reroll:hover{color:var(--shu);}
+.reroll:focus-visible{outline:2px solid var(--ai);}
+
+/* 合格条件 */
+.joken{
+  margin-top:8px;background:var(--sumi2);
+  border:1px solid var(--kin);border-radius:3px;
+  padding:18px 20px;text-align:center;
+}
+.joken .ttl{font-family:"Yuji Syuku",serif;font-size:20px;color:var(--kin);letter-spacing:.2em;margin:0 0 12px;}
+.joken .conds{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;}
+.cond{flex:1;min-width:130px;max-width:230px;background:rgba(255,255,255,.04);border-radius:3px;padding:14px 10px;}
+.cond .k{font-size:12px;letter-spacing:.14em;margin-bottom:6px;}
+.cond.ka .k{color:#7fa8cf;}
+.cond.fk .k{color:#e0857c;}
+.cond .v{font-family:"Shippori Mincho",serif;font-weight:800;font-size:34px;color:var(--washi);line-height:1;}
+.cond .v small{font-size:15px;font-weight:600;margin-left:4px;color:#a99c86;}
+
+/* ── data import ── */
+details.data{margin-top:34px;background:var(--sumi2);border:1px solid #3a2f26;border-radius:4px;color:#cabfa d;}
+details.data{color:#c9bca6;}
+summary{cursor:pointer;padding:14px 18px;font-size:13px;font-weight:500;letter-spacing:.04em;color:#cabfa7;list-style:none;}
+summary::-webkit-details-marker{display:none;}
+summary::before{content:"▸ ";color:var(--kin);}
+details[open] summary::before{content:"▾ ";}
+.data-body{padding:0 18px 18px;}
+.data-body p{font-size:12.5px;line-height:1.7;color:#a99c86;margin:0 0 10px;}
+.data-body code{background:#000;padding:1px 6px;border-radius:3px;color:var(--kin);font-size:12px;}
+.gas{margin:0 0 6px;}
+.gas input[type=text]{
+  width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;
+  background:#000;color:#d8cdb5;border:1px solid #3a2f26;border-radius:3px;padding:9px 11px;margin-top:4px;
+}
+.gas input[type=text]:focus-visible{outline:2px solid var(--kin);outline-offset:1px;}
+.data-body hr{border:none;border-top:1px solid #3a2f26;margin:18px 0;}
+.data-body .tag{display:inline-block;background:var(--kin);color:var(--sumi);font-weight:700;font-size:11px;padding:2px 8px;border-radius:2px;margin-right:6px;letter-spacing:.04em;}
+textarea{
+  width:100%;min-height:120px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;
+  background:#000;color:#d8cdb5;border:1px solid #3a2f26;border-radius:3px;padding:11px;resize:vertical;
+}
+.data-actions{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+.data-actions button{
+  font-family:inherit;font-size:13px;cursor:pointer;border-radius:3px;padding:8px 16px;border:1px solid var(--kin);
+  background:transparent;color:var(--kin);
+}
+.data-actions button.primary{background:var(--kin);color:var(--sumi);border-color:var(--kin);font-weight:700;}
+.data-actions button:focus-visible{outline:2px solid var(--washi);outline-offset:2px;}
+.data-status{font-size:12px;color:#9bc08a;}
+.data-status.bad{color:#e0857c;}
+
+@media (max-width:620px){
+  .slots{grid-template-columns:1fr;}
+  .thresh{grid-template-columns:1fr;}
+  .fuda{grid-template-columns:46px 1fr;}
+  .seal{grid-column:1 / -1;justify-self:start;}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">段位道場 風<span class="dot">●</span>ランダム模擬演奏</p>
+  <h1>自作段位 お題生成所</h1>
+  <p class="lede">難易度・ジャンル・可／不可の許容範囲を決めて「お題生成」を押すと、3曲ぶんの模擬段位が一枚の巻物になって出てきます。</p>
+
+  <!-- 設定 -->
+  <section class="panel">
+    <h2 class="panel-head">お題の条件</h2>
+    <div class="slots" id="slots"><!-- JSで生成 --></div>
+
+    <div class="thresh">
+      <div class="box ka">
+        <p class="ttl">可（合計）</p>
+        <p class="hint">この範囲からランダムに「○未満」を決めます</p>
+        <div class="range">
+          <span>最小</span><input type="number" id="kaMin" min="0" max="5000" value="0">
+          <span>〜 最大</span><input type="number" id="kaMax" min="0" max="5000" value="30">
+        </div>
+      </div>
+      <div class="box fk">
+        <p class="ttl">不可（合計）</p>
+        <p class="hint">この範囲からランダムに「○未満」を決めます</p>
+        <div class="range">
+          <span>最小</span><input type="number" id="fkMin" min="0" max="5000" value="0">
+          <span>〜 最大</span><input type="number" id="fkMax" min="0" max="5000" value="5">
+        </div>
+      </div>
+    </div>
+
+    <div class="go-row">
+      <button class="go" id="goBtn">お題生成</button>
+    </div>
+    <p class="err" id="err"></p>
+  </section>
+
+  <!-- 出力 -->
+  <section class="scroll" id="scroll">
+    <h2 class="scroll-head">本日のお題</h2>
+    <p class="scroll-sub">三曲 通シ</p>
+    <div id="fudaList"></div>
+    <div class="joken">
+      <p class="ttl">合格条件</p>
+      <div class="conds">
+        <div class="cond ka"><div class="k">可 合計</div><div class="v"><span id="kaVal">–</span><small>未満</small></div></div>
+        <div class="cond fk"><div class="k">不可 合計</div><div class="v"><span id="fkVal">–</span><small>未満</small></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- データ差し替え -->
+  <details class="data">
+    <summary>曲データを差し替える（自分の譜面リストを読み込む）</summary>
+    <div class="data-body">
+      <p>いまは動作確認用の<b>サンプル曲（難易度は仮の値）</b>が入っています。下のどちらかで自分の譜面リストに差し替えてください。</p>
+
+      <div class="gas">
+        <p><span class="tag">方法A</span>GASのWeb App（<code>/exec</code>）から取得します。スプレッドシート側にスクリプトを入れてデプロイし、発行されたURLを貼ってください。</p>
+        <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/＿＿＿/exec">
+        <div class="data-actions">
+          <button class="primary" id="gasBtn">GASから取得</button>
+          <span class="data-status" id="gasStatus"></span>
+        </div>
+      </div>
+
+      <hr>
+
+      <p><span class="tag">方法B</span>スプレッドシートの曲リストを範囲選択してコピーし、下の枠に貼り付けて「読み込む」。1行1曲で <code>曲名 [Tab] ジャンル [Tab] おに難易度 [Tab] 裏(任意)</code>。ジャンル内の並び順がそのまま「○番目」になり、4列目に <code>裏</code> と書いた行は裏譜面扱いです。見出し行は自動で除外します。</p>
+      <textarea id="dataIn" placeholder="Flower&#9;ゲームミュージック&#9;9&#10;紅蓮華&#9;ポップス&#9;8&#10;千本桜&#9;ボーカロイド&#9;9&#9;裏"></textarea>
+      <div class="data-actions">
+        <button class="primary" id="loadBtn">読み込む</button>
+        <button id="fillBtn">いまのデータを書き出す</button>
+        <span class="data-status" id="dataStatus"></span>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script>
+/* ───────── サンプルデータ（難易度☆は仮の値。実データに差し替えてください） ───────── */
+let SONGS = [
+  {name:"夜に駆ける", genre:"ポップス", level:8},
+  {name:"紅蓮華", genre:"ポップス", level:8},
+  {name:"うっせぇわ", genre:"ポップス", level:8},
+  {name:"Pretender", genre:"ポップス", level:7},
+  {name:"怪物", genre:"ポップス", level:8},
+  {name:"前前前世", genre:"アニメ", level:7},
+  {name:"残酷な天使のテーゼ", genre:"アニメ", level:7},
+  {name:"紅", genre:"アニメ", level:9},
+  {name:"鳥の詩", genre:"アニメ", level:7},
+  {name:"千本桜", genre:"ボーカロイド", level:9},
+  {name:"メルト", genre:"ボーカロイド", level:6},
+  {name:"ロキ", genre:"ボーカロイド", level:9},
+  {name:"脳漿炸裂ガール", genre:"ボーカロイド", level:9},
+  {name:"マトリョシカ", genre:"ボーカロイド", level:8},
+  {name:"Flower", genre:"ゲームミュージック", level:9},
+  {name:"KAGEKIYO", genre:"ゲームミュージック", level:10},
+  {name:"タベルナ", genre:"ゲームミュージック", level:8},
+  {name:"さいたま2000", genre:"ナムコオリジナル", level:8},
+  {name:"きたさいたま2000", genre:"ナムコオリジナル", level:9},
+  {name:"第六天魔王", genre:"ナムコオリジナル", level:10},
+  {name:"幽玄ノ乱", genre:"ナムコオリジナル", level:10},
+  {name:"ドンカマ2000", genre:"バラエティ", level:10},
+  {name:"風林火山", genre:"クラシック", level:8},
+  {name:"木琴", genre:"クラシック", level:7},
+];
+
+/* ───────── ユーティリティ ───────── */
+const $ = s => document.querySelector(s);
+const randInt = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+
+// 位置(ジャンル内の番号)を確定。GAS取得データはpos付き→そのまま使う。
+// コピペ等でpos無しなら登場順で採番し、同名の裏は表と同じ番号を共有する。
+function normalize(songs){
+  const posMap={}, counter={};
+  return songs.map(s=>{
+    if(s.pos) return s;
+    const k = s.genre+'|'+s.name;
+    if(posMap[k]==null){ counter[s.genre]=(counter[s.genre]||0)+1; posMap[k]=counter[s.genre]; }
+    return {...s, pos:posMap[k]};
+  });
+}
+function genreList(songs){
+  const seen=[]; songs.forEach(s=>{ if(!seen.includes(s.genre)) seen.push(s.genre); }); return seen;
+}
+
+/* ───────── スロット設定UIを描画 ───────── */
+function renderSlots(){
+  const genres = genreList(SONGS);
+  const genreOpts = ['<option value="">指定なし</option>']
+    .concat(genres.map(g=>`<option value="${g}">${g}</option>`)).join('');
+  let lvOpts = '<option value="">指定なし</option>';
+  for(let n=1;n<=9;n++) lvOpts += `<option value="${n}">☆${n}</option>`;
+  lvOpts += '<option value="10">☆10（表裏問わず）</option>';
+  lvOpts += '<option value="10:omote">☆10 表のみ</option>';
+  lvOpts += '<option value="10:ura">☆10 裏のみ</option>';
+  $('#slots').innerHTML = [1,2,3].map(i=>`
+    <div class="slot">
+      <p class="slot-no">${['一','二','三'][i-1]}曲目</p>
+      <label for="g${i}">ジャンル</label>
+      <select id="g${i}">${genreOpts}</select>
+      <label for="l${i}">難易度（おに）</label>
+      <select id="l${i}">${lvOpts}</select>
+    </div>`).join('');
+}
+
+/* ───────── 生成ロジック ───────── */
+let current = {picks:[null,null,null], ka:null, fk:null};
+
+function parseLevelFilter(v){
+  if(!v) return {level:null, ura:null};
+  const [lv,side] = v.split(':');
+  return {level:parseInt(lv,10), ura: side==='omote'?false : side==='ura'?true : null};
+}
+function poolFor(slot){
+  const g = $(`#g${slot}`).value;
+  const {level,ura} = parseLevelFilter($(`#l${slot}`).value);
+  return normalize(SONGS).filter(s =>
+    (g==='' || s.genre===g) &&
+    (level==null || s.level===level) &&
+    (ura==null || !!s.ura===ura));
+}
+function keyOf(s){ return s ? `${s.genre}|${s.name}|${s.ura?1:0}` : ''; }
+
+// 既に選ばれた曲を避けて1曲引く
+function pickOne(slot, used){
+  let pool = poolFor(slot);
+  if(pool.length===0) return null;
+  const fresh = pool.filter(s=>!used.has(keyOf(s)));
+  const useArr = fresh.length ? fresh : pool; // 重複回避できなければ許容
+  return useArr[randInt(0,useArr.length-1)];
+}
+
+function readThresholds(){
+  const get = id => Math.max(0, Math.min(5000, parseInt($(id).value,10)||0));
+  let kaMin=get('#kaMin'), kaMax=get('#kaMax'), fkMin=get('#fkMin'), fkMax=get('#fkMax');
+  if(kaMin>kaMax) [kaMin,kaMax]=[kaMax,kaMin];
+  if(fkMin>fkMax) [fkMin,fkMax]=[fkMax,fkMin];
+  return {kaMin,kaMax,fkMin,fkMax};
+}
+
+function generate(){
+  $('#err').textContent='';
+  // 各スロットに候補があるか確認
+  const empties=[];
+  [1,2,3].forEach(i=>{ if(poolFor(i).length===0) empties.push(['一','二','三'][i-1]); });
+  if(empties.length){
+    $('#err').textContent = `${empties.join('・')}曲目の条件に合う曲がありません。ジャンルか難易度をゆるめてください。`;
+    return;
+  }
+  const used = new Set();
+  const picks=[];
+  for(let i=1;i<=3;i++){ const s=pickOne(i,used); used.add(keyOf(s)); picks.push(s); }
+
+  const t = readThresholds();
+  current = { picks, ka:randInt(t.kaMin,t.kaMax), fk:randInt(t.fkMin,t.fkMax) };
+  renderOutput();
+}
+
+function rerollSlot(idx){
+  const slot = idx+1;
+  const used = new Set(current.picks.filter((_,j)=>j!==idx).map(keyOf));
+  const s = pickOne(slot, used);
+  if(s){ current.picks[idx]=s; renderOutput(); }
+}
+
+/* ───────── 出力描画 ───────── */
+function renderOutput(){
+  const list = current.picks.map((s,idx)=>{
+    const uraTag = s.ura ? `<span class="ura">(裏)</span>` : '';
+    return `
+      <div class="fuda">
+        <div class="kanmuri">${['一','二','三'][idx]}<br>曲目</div>
+        <div class="song-main">
+          <div class="nm">${escapeHtml(s.name)}${uraTag}<span class="lv">☆${s.level}</span></div>
+          <div class="meta">ジャンル：<b>${escapeHtml(s.genre)}</b></div>
+        </div>
+        <button class="reroll" title="この曲だけ引き直す" data-idx="${idx}">⟳</button>
+        <div class="seal"><span class="num">${s.pos}</span><span class="lab">番目</span></div>
+      </div>`;
+  }).join('');
+  $('#fudaList').innerHTML = list;
+  $('#kaVal').textContent = current.ka;
+  $('#fkVal').textContent = current.fk;
+  $('#scroll').classList.add('show');
+  // 引き直しボタン
+  document.querySelectorAll('.reroll').forEach(b=>{
+    b.addEventListener('click',()=>rerollSlot(parseInt(b.dataset.idx,10)));
+  });
+  $('#scroll').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ───────── データ読み込み ───────── */
+function loadData(){
+  const raw = $('#dataIn').value.trim();
+  const status = $('#dataStatus');
+  if(!raw){ status.textContent='貼り付け欄が空です。'; status.className='data-status bad'; return; }
+  const rows = raw.split(/\r?\n/).map(r=>r.split('\t').map(c=>c.trim())).filter(c=>c[0]);
+  const parsed=[];
+  for(const c of rows){
+    const [name,genre,lv,ura] = c;
+    if(!name || !genre) continue;
+    if(/^(曲名|name)$/i.test(name)) continue; // 見出し行除外
+    const level = parseInt(lv,10);
+    parsed.push({name, genre, level: isNaN(level)?0:level, ura: /裏|ura|true|1/i.test(ura||'')});
+  }
+  if(parsed.length===0){ status.textContent='読み取れる行がありませんでした。タブ区切りか確認してください。'; status.className='data-status bad'; return; }
+  SONGS = parsed;
+  renderSlots();
+  $('#scroll').classList.remove('show');
+  status.textContent = `${parsed.length}曲・${genreList(SONGS).length}ジャンルを読み込みました。`;
+  status.className='data-status';
+}
+function dumpData(){
+  $('#dataIn').value = SONGS.map(s=>[s.name,s.genre,s.level,s.ura?'裏':''].join('\t').replace(/\t$/,'')).join('\n');
+  $('#dataStatus').textContent='いまのデータを書き出しました。'; $('#dataStatus').className='data-status';
+}
+
+/* ───────── GASから取得（JSONP） ───────── */
+// GASの /exec はブラウザの fetch だと CORS で弾かれやすいので、
+// callback パラメータを付けて <script> で読み込む JSONP 方式で取得する。
+function fetchViaJsonp(url){
+  return new Promise((resolve,reject)=>{
+    const cb = '__taikoCb' + Date.now();
+    const sep = url.includes('?') ? '&' : '?';
+    const s = document.createElement('script');
+    let done = false;
+    const cleanup = ()=>{ delete window[cb]; s.remove(); };
+    window[cb] = data=>{ done=true; resolve(data); cleanup(); };
+    s.onerror = ()=>{ if(!done){ cleanup(); reject(new Error('読み込み失敗')); } };
+    s.src = url + sep + 'callback=' + cb;
+    document.body.appendChild(s);
+    setTimeout(()=>{ if(!done){ cleanup(); reject(new Error('タイムアウト')); } }, 45000);
+  });
+}
+async function loadFromGas(){
+  const url = $('#gasUrl').value.trim();
+  const st = $('#gasStatus');
+  if(!url){ st.textContent='URLを入れてください。'; st.className='data-status bad'; return; }
+  if(!/\/exec(\?|$)/.test(url)){ st.textContent='末尾が /exec のURLを貼ってください（/dev ではなく）。'; st.className='data-status bad'; return; }
+  st.textContent='取得中…（初回は曲数が多く数十秒かかることがあります）'; st.className='data-status';
+  try{
+    const data = await fetchViaJsonp(url);
+    if(data && data.error) throw new Error(data.error);
+    if(!Array.isArray(data) || !data.length) throw new Error('曲データが空でした');
+    SONGS = data.map(s=>({
+      name:String(s.name), genre:String(s.genre),
+      level:parseInt(s.level,10)||0, ura:!!s.ura, pos:s.pos
+    }));
+    renderSlots();
+    $('#scroll').classList.remove('show');
+    st.textContent = `${SONGS.length}曲・${genreList(SONGS).length}ジャンルを取得しました。`;
+    st.className='data-status';
+  }catch(err){
+    st.textContent = '取得できませんでした（'+err.message+'）。このプレビュー内では外部読み込みがブロックされることがあります。HTMLを保存して開くか、方法Bの貼り付けをお使いください。';
+    st.className='data-status bad';
+  }
+}
+
+/* ───────── 初期化 ───────── */
+renderSlots();
+$('#goBtn').addEventListener('click', generate);
+$('#gasBtn').addEventListener('click', loadFromGas);
+$('#loadBtn').addEventListener('click', loadData);
+$('#fillBtn').addEventListener('click', dumpData);
+</script>
+</body>
+</html>
