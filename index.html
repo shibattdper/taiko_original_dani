@@ -165,17 +165,19 @@ button.go:focus-visible{outline:3px solid var(--kin);outline-offset:3px;}
 
 /* 朱印（順番） */
 .seal{
-  width:60px;height:60px;border:2.5px solid var(--shu);border-radius:6px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  color:var(--shu);position:relative;flex:none;
+  border:2.5px solid var(--shu);border-radius:6px;
+  display:flex;flex-direction:column;justify-content:center;gap:3px;
+  color:var(--shu);position:relative;flex:none;padding:7px 9px;
+  font-family:"Shippori Mincho",serif;
   animation:stamp .35s cubic-bezier(.2,1.5,.5,1) both;
 }
 .fuda:nth-child(2) .seal{animation-delay:.18s;}
 .fuda:nth-child(3) .seal{animation-delay:.25s;}
 .fuda:nth-child(4) .seal{animation-delay:.32s;}
 @keyframes stamp{0%{opacity:0;transform:scale(1.9) rotate(-12deg);}60%{opacity:1;}100%{opacity:1;transform:none;}}
-.seal .num{font-family:"Shippori Mincho",serif;font-weight:800;font-size:24px;line-height:1;}
-.seal .lab{font-size:9px;letter-spacing:.1em;margin-top:2px;}
+.seal .pp{font-size:11px;line-height:1.1;white-space:nowrap;text-align:right;letter-spacing:.02em;}
+.seal .pp b{font-size:19px;font-weight:800;margin:0 1px;}
+.seal .pp small{font-size:9px;}
 .reroll{
   position:absolute;top:8px;right:10px;background:none;border:none;cursor:pointer;
   color:var(--ink-soft);font-size:18px;padding:2px 4px;border-radius:3px;line-height:1;
@@ -371,7 +373,7 @@ textarea{
   }
 
   .fuda{
-    grid-template-columns:42px 1fr 42px;
+    grid-template-columns:42px 1fr auto;
     gap:8px;
     padding:10px 10px 10px 12px;
     margin-bottom:8px;
@@ -399,16 +401,19 @@ textarea{
   }
 
   .seal{
-    width:40px;
-    height:40px;
+    padding:5px 7px;
     border-width:2px;
   }
 
-  .seal .num{
-    font-size:18px;
+  .seal .pp{
+    font-size:9.5px;
   }
 
-  .seal .lab{
+  .seal .pp b{
+    font-size:14px;
+  }
+
+  .seal .pp small{
     font-size:8px;
   }
 
@@ -579,6 +584,12 @@ function normalize(songs){
 function genreList(songs){
   const seen=[]; songs.forEach(s=>{ if(!seen.includes(s.genre)) seen.push(s.genre); }); return seen;
 }
+// ジャンルごとの曲数（＝そのジャンルの最大の番号）。「下から○番目」に使う。
+function genreTotals(){
+  const t={};
+  normalize(SONGS).forEach(s=>{ if(!(s.genre in t) || s.pos>t[s.genre]) t[s.genre]=s.pos; });
+  return t;
+}
 
 /* ───────── スロット設定UIを描画 ───────── */
 function renderSlots(){
@@ -658,8 +669,11 @@ function rerollSlot(idx){
 
 /* ───────── 出力描画 ───────── */
 function renderOutput(){
+  const totals = genreTotals();
   const list = current.picks.map((s,idx)=>{
     const uraTag = s.ura ? `<span class="ura">(裏)</span>` : '';
+    const total = totals[s.genre] || s.pos;
+    const bottom = total - s.pos + 1;
     return `
       <div class="fuda">
         <div class="kanmuri">${['一','二','三'][idx]}<br>曲目</div>
@@ -668,7 +682,10 @@ function renderOutput(){
           <div class="meta">ジャンル：<b>${escapeHtml(s.genre)}</b></div>
         </div>
         <button class="reroll" title="この曲だけ引き直す" data-idx="${idx}">⟳</button>
-        <div class="seal"><span class="num">${s.pos}</span><span class="lab">番目</span></div>
+        <div class="seal">
+          <span class="pp">上から<b>${s.pos}</b><small>番目</small></span>
+          <span class="pp">下から<b>${bottom}</b><small>番目</small></span>
+        </div>
       </div>`;
   }).join('');
   $('#fudaList').innerHTML = list;
