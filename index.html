@@ -527,11 +527,14 @@ async function loadFromGas(){
     const data = await fetchViaJsonp(url);
     if(data && data.error) throw new Error(data.error);
     if(!Array.isArray(data) || !data.length) throw new Error('曲データが空でした');
-    SONGS = data.map(s=>({
-      name:String(s.name), genre:String(s.genre),
-      level:parseInt(s.level,10)||0, ura:!!s.ura, pos:s.pos
-    }));
-    renderSlots();
+  SONGS = data.map(s=>({
+    name:String(s.name), genre:String(s.genre),
+    level:parseInt(s.level,10)||0, ura:!!s.ura, pos:s.pos
+  }));
+
+  localStorage.setItem('taikoSongs', JSON.stringify(SONGS));
+
+  renderSlots();
     $('#scroll').classList.remove('show');
     st.textContent = `${SONGS.length}曲・${genreList(SONGS).length}ジャンルを取得しました。`;
     st.className='data-status';
