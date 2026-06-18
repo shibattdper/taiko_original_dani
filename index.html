@@ -271,11 +271,19 @@ textarea{
 
   .slot{
     display:grid;
-    grid-template-columns:48px 1fr 1fr;
+    grid-template-columns:42px 1fr 1fr;
+    grid-template-areas:
+      "no gen gen"
+      "no lvl side";
     gap:8px;
     align-items:center;
     padding:8px;
   }
+
+  .slot .slot-no{grid-area:no;}
+  .slot .sel-genre{grid-area:gen;}
+  .slot .sel-level{grid-area:lvl;}
+  .slot .sel-side{grid-area:side;}
 
   .slot-no{
     margin:0;
@@ -578,35 +586,31 @@ function renderSlots(){
   const genreOpts = ['<option value="">指定なし</option>']
     .concat(genres.map(g=>`<option value="${g}">${g}</option>`)).join('');
   let lvOpts = '<option value="">指定なし</option>';
-  for(let n=1;n<=9;n++) lvOpts += `<option value="${n}">☆${n}</option>`;
-  lvOpts += '<option value="10">☆10（表裏問わず）</option>';
-  lvOpts += '<option value="10:omote">☆10 表のみ</option>';
-  lvOpts += '<option value="10:ura">☆10 裏のみ</option>';
+  for(let n=1;n<=10;n++) lvOpts += `<option value="${n}">☆${n}</option>`;
+  const sideOpts = '<option value="">表裏問わず</option><option value="omote">表のみ</option><option value="ura">裏のみ</option>';
   $('#slots').innerHTML = [1,2,3].map(i=>`
     <div class="slot">
       <p class="slot-no">${['一','二','三'][i-1]}曲目</p>
       <label for="g${i}">ジャンル</label>
-      <select id="g${i}">${genreOpts}</select>
+      <select id="g${i}" class="sel-genre">${genreOpts}</select>
       <label for="l${i}">難易度（おに）</label>
-      <select id="l${i}">${lvOpts}</select>
+      <select id="l${i}" class="sel-level">${lvOpts}</select>
+      <label for="s${i}">表 / 裏</label>
+      <select id="s${i}" class="sel-side">${sideOpts}</select>
     </div>`).join('');
 }
 
 /* ───────── 生成ロジック ───────── */
 let current = {picks:[null,null,null], ka:null, fk:null};
 
-function parseLevelFilter(v){
-  if(!v) return {level:null, ura:null};
-  const [lv,side] = v.split(':');
-  return {level:parseInt(lv,10), ura: side==='omote'?false : side==='ura'?true : null};
-}
 function poolFor(slot){
   const g = $(`#g${slot}`).value;
-  const {level,ura} = parseLevelFilter($(`#l${slot}`).value);
+  const level = $(`#l${slot}`).value;   // '' または '1'..'10'
+  const side = $(`#s${slot}`).value;    // '' / 'omote' / 'ura'
   return normalize(SONGS).filter(s =>
     (g==='' || s.genre===g) &&
-    (level==null || s.level===level) &&
-    (ura==null || !!s.ura===ura));
+    (level==='' || s.level===parseInt(level,10)) &&
+    (side==='' || (side==='ura' ? !!s.ura : !s.ura)));
 }
 function keyOf(s){ return s ? `${s.genre}|${s.name}|${s.ura?1:0}` : ''; }
 
@@ -633,7 +637,7 @@ function generate(){
   const empties=[];
   [1,2,3].forEach(i=>{ if(poolFor(i).length===0) empties.push(['一','二','三'][i-1]); });
   if(empties.length){
-    $('#err').textContent = `${empties.join('・')}曲目の条件に合う曲がありません。ジャンルか難易度をゆるめてください。`;
+    $('#err').textContent = `${empties.join('・')}曲目の条件に合う曲がありません。ジャンル・難易度・表裏をゆるめてください。`;
     return;
   }
   const used = new Set();
@@ -732,14 +736,15 @@ async function loadFromGas(){
     const data = await fetchViaJsonp(url);
     if(data && data.error) throw new Error(data.error);
     if(!Array.isArray(data) || !data.length) throw new Error('曲データが空でした');
-  SONGS = data.map(s=>({
-    name:String(s.name), genre:String(s.genre),
-    level:parseInt(s.level,10)||0, ura:!!s.ura, pos:s.pos
-  }));
+    SONGS = data.map(s=>({
+      name:String(s.name), genre:String(s.genre),
+      level:parseInt(s.level,10)||0, ura:!!s.ura, pos:s.pos
+    }));
 
-  localStorage.setItem('taikoSongs', JSON.stringify(SONGS));
+    // ローカル保存（ブラウザが許可しない環境でも取得自体は成功とする）
+    try { localStorage.setItem('taikoSongs', JSON.stringify(SONGS)); } catch(e){}
 
-  renderSlots();
+    renderSlots();
     $('#scroll').classList.remove('show');
     st.textContent = `${SONGS.length}曲・${genreList(SONGS).length}ジャンルを取得しました。`;
     st.className='data-status';
@@ -770,7 +775,7 @@ $('#fillBtn').addEventListener('click', dumpData);
 
 // ページを開いたら裏でGASから最新版を取得
 loadFromGas();
-  
+
 </script>
 </body>
 </html>
