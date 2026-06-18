@@ -245,7 +245,7 @@ textarea{
 <div class="wrap">
   <p class="eyebrow">段位道場 風<span class="dot">●</span>ランダム模擬演奏</p>
   <h1>ランダム段位 お題生成所</h1>
-  <p class="lede">難易度・ジャンル・可／不可の許容範囲を決めて「お題生成」を押すと、3曲ぶんの模擬段位が出てきます。</p>
+  <p class="lede">難易度・ジャンル・可／不可の許容範囲を決めて「お題生成」を押すと、3曲ぶんの模擬段位が出てきます。※このページは非公式の段位道場風お題生成ツールです。</p>
 
   <!-- 設定 -->
   <section class="panel">
@@ -292,7 +292,7 @@ textarea{
   </section>
 
   <!-- データ差し替え -->
-  <details class="data">
+  <details class="data" style="display:none;">
     <summary>曲データを差し替える（自分の譜面リストを読み込む）</summary>
     <div class="data-body">
       <p>最初は動作確認用の<b>サンプル曲（難易度は仮の値）</b>が入っています。下のどちらかで自分の譜面リストに差し替えてください。</p>
@@ -545,14 +545,27 @@ async function loadFromGas(){
 }
 
 /* ───────── 初期化 ───────── */
+
+// 前回取得した曲リストがあれば、先にそれを使う
+try {
+  const cached = localStorage.getItem('taikoSongs');
+  if (cached) {
+    SONGS = JSON.parse(cached);
+  }
+} catch (e) {
+  console.warn('保存済み曲データの読み込みに失敗しました', e);
+}
+
 renderSlots();
+
 $('#goBtn').addEventListener('click', generate);
 $('#gasBtn').addEventListener('click', loadFromGas);
 $('#loadBtn').addEventListener('click', loadData);
 $('#fillBtn').addEventListener('click', dumpData);
 
-// ページを開いたら自動でGASから曲リストを取得
+// ページを開いたら裏でGASから最新版を取得
 loadFromGas();
+  
 </script>
 </body>
 </html>
