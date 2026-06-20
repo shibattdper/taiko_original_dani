@@ -109,9 +109,10 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--ai);outline-off
 .thresh .ka .ttl{color:var(--ai);}
 .thresh .fk .ttl{color:var(--shu-deep);}
 .thresh .hint{font-size:11px;color:var(--ink-soft);margin:0 0 9px;}
-.range{display:flex;align-items:center;gap:8px;}
-.range span{font-size:12px;color:var(--ink-soft);}
-.range input{width:100%;}
+.range{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.range .rl{display:block;}
+.range .rl .t{display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;font-weight:600;letter-spacing:.04em;}
+.range select{width:100%;}
 
 /* ── generate button ── */
 .go-row{margin-top:24px;text-align:center;}
@@ -311,35 +312,27 @@ textarea{
   }
 
   .thresh{
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:1fr;
     gap:8px;
     margin-top:10px;
   }
 
   .thresh .box{
-    padding:9px 8px;
+    padding:11px 12px;
   }
 
   .thresh .ttl{
-    font-size:13px;
-    margin-bottom:5px;
+    font-size:14px;
+    margin-bottom:3px;
   }
 
   .thresh .hint{
-    display:none;
+    font-size:10.5px;
+    margin-bottom:8px;
   }
 
-  .range{
-    gap:5px;
-  }
-
-  .range span{
-    display:none;
-  }
-
-  .range input{
-    padding:7px 6px;
-    text-align:center;
+  .range select{
+    padding:8px 8px;
   }
 
   .go-row{
@@ -473,18 +466,18 @@ textarea{
     <div class="thresh">
       <div class="box ka">
         <p class="ttl">可（合計）</p>
-        <p class="hint">この範囲からランダムに「○未満」を決めます</p>
+        <p class="hint">叩いた中で「可」の合計がこの範囲未満になるお題を出します。</p>
         <div class="range">
-          <span>最小</span><input type="number" id="kaMin" min="0" max="5000" value="1">
-          <span>〜 最大</span><input type="number" id="kaMax" min="0" max="5000" value="30">
+          <label class="rl"><span class="t">最低</span><select id="kaMin"></select></label>
+          <label class="rl"><span class="t">最高</span><select id="kaMax"></select></label>
         </div>
       </div>
       <div class="box fk">
         <p class="ttl">不可（合計）</p>
-        <p class="hint">この範囲からランダムに「○未満」を決めます</p>
+        <p class="hint">叩いた中で「不可」の合計がこの範囲未満になるお題を出します。</p>
         <div class="range">
-          <span>最小</span><input type="number" id="fkMin" min="0" max="5000" value="1">
-          <span>〜 最大</span><input type="number" id="fkMax" min="0" max="5000" value="5">
+          <label class="rl"><span class="t">最低</span><select id="fkMin"></select></label>
+          <label class="rl"><span class="t">最高</span><select id="fkMax"></select></label>
         </div>
       </div>
     </div>
@@ -642,6 +635,21 @@ function readThresholds(){
   return {kaMin,kaMax,fkMin,fkMax};
 }
 
+// 可/不可セレクトの選択肢：1〜40(1刻み)→45〜100(5刻み)→110〜500(10刻み)
+function threshOptions(selected){
+  const vals=[];
+  for(let n=1;n<=40;n++) vals.push(n);
+  for(let n=45;n<=100;n+=5) vals.push(n);
+  for(let n=110;n<=500;n+=10) vals.push(n);
+  return vals.map(v=>`<option value="${v}"${v===selected?' selected':''}>${v}</option>`).join('');
+}
+function buildThresholds(){
+  $('#kaMin').innerHTML = threshOptions(1);
+  $('#kaMax').innerHTML = threshOptions(30);
+  $('#fkMin').innerHTML = threshOptions(1);
+  $('#fkMax').innerHTML = threshOptions(5);
+}
+
 function generate(){
   $('#err').textContent='';
   // 各スロットに候補があるか確認
@@ -784,7 +792,7 @@ try {
 }
 
 renderSlots();
-
+buildThresholds();
 $('#goBtn').addEventListener('click', generate);
 $('#gasBtn').addEventListener('click', loadFromGas);
 $('#loadBtn').addEventListener('click', loadData);
