@@ -179,6 +179,8 @@ button.go:focus-visible{outline:3px solid var(--kin);outline-offset:3px;}
 .seal .pp{font-size:11px;line-height:1.1;white-space:nowrap;text-align:right;letter-spacing:.02em;}
 .seal .pp b{font-size:19px;font-weight:800;margin:0 1px;}
 .seal .pp small{font-size:9px;}
+.seal .pp.sk{font-size:9px;color:var(--ink-soft);letter-spacing:0;margin:-1px 0 3px;font-family:"Zen Kaku Gothic New",sans-serif;}
+.seal .pp.sk b{font-size:11px;color:var(--shu-deep);font-family:"Shippori Mincho",serif;}
 .reroll{
   position:absolute;top:8px;right:10px;background:none;border:none;cursor:pointer;
   color:var(--ink-soft);font-size:18px;padding:2px 4px;border-radius:3px;line-height:1;
@@ -200,6 +202,40 @@ button.go:focus-visible{outline:3px solid var(--kin);outline-offset:3px;}
 .cond.fk .k{color:#e0857c;}
 .cond .v{font-family:"Shippori Mincho",serif;font-weight:800;font-size:34px;color:var(--washi);line-height:1;}
 .cond .v small{font-size:15px;font-weight:600;margin-left:4px;color:#a99c86;}
+
+/* ── 曲の番号を調べる ── */
+.finder{margin-top:22px;}
+.finder-hint{font-size:12.5px;color:var(--ink-soft);margin:0 0 14px;line-height:1.6;}
+.finder-row{display:flex;gap:10px;}
+.finder-row input{flex:1;min-width:0;font-family:inherit;font-size:15px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:3px;padding:10px 12px;}
+.finder-row input:focus-visible{outline:2px solid var(--ai);outline-offset:1px;}
+.find-btn{font-family:"Yuji Syuku",serif;font-size:18px;letter-spacing:.12em;color:var(--washi);background:var(--ai);border:none;border-radius:3px;cursor:pointer;padding:0 24px;box-shadow:0 4px 0 #20384e;transition:transform .08s,box-shadow .08s;}
+.find-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #20384e;}
+.find-btn:focus-visible{outline:3px solid var(--kin);outline-offset:2px;}
+.find-results{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+.find-empty{font-size:13px;color:var(--ink-soft);text-align:center;padding:12px;}
+.find-note{font-size:11.5px;color:var(--ink-soft);text-align:center;margin:2px 0 0;}
+.find-item{background:rgba(255,255,255,.45);border:1px solid var(--line);border-radius:3px;overflow:hidden;}
+.fi-head{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px 12px;padding:11px 14px;cursor:pointer;}
+.fi-head:hover{background:rgba(255,255,255,.3);}
+.fi-text{min-width:0;}
+.fi-main{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.fi-name{font-family:"Shippori Mincho",serif;font-weight:800;font-size:17px;color:var(--ink);}
+.fi-lv{font-size:12px;color:var(--ink-soft);}
+.fi-meta{font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
+.fi-pos{text-align:right;white-space:nowrap;color:var(--ai);font-family:"Shippori Mincho",serif;}
+.fp-row{font-size:12px;line-height:1.4;margin-top:2px;}
+.fp-row:first-child{margin-top:0;}
+.fp-row b{font-size:18px;font-weight:800;margin:0 2px;}
+.fp-sk{display:block;font-size:10.5px;color:var(--ink-soft);font-family:"Zen Kaku Gothic New",sans-serif;}
+.fp-sk b{font-size:13px;color:var(--ai);font-family:"Shippori Mincho",serif;margin:0 1px;}
+.fi-neighbors{display:none;border-top:1px dashed var(--line);padding:8px 14px 10px;background:rgba(0,0,0,.025);}
+.find-item.open .fi-neighbors{display:block;}
+.nb{display:flex;gap:10px;padding:3px 0;font-size:13px;}
+.nb-no{min-width:2.6em;text-align:right;color:var(--ai);font-weight:700;font-variant-numeric:tabular-nums;}
+.nb-nm{color:var(--ink);}
+.nb-cur .nb-no{color:var(--shu);}
+.nb-cur .nb-nm{color:var(--shu);font-weight:800;}
 
 /* ── data import ── */
 details.data{margin-top:34px;background:var(--sumi2);border:1px solid #3a2f26;border-radius:4px;color:#cabfa d;}
@@ -446,6 +482,19 @@ textarea{
   .cond .v small{
     font-size:12px;
   }
+
+  .finder{margin-top:14px;}
+  .finder-hint{font-size:11px;margin-bottom:10px;}
+  .find-btn{font-size:16px;padding:0 18px;}
+  .fi-name{font-size:15px;}
+  .fi-head{gap:6px 8px;padding:10px 11px;}
+  .fp-row{font-size:11px;}
+  .fp-row b{font-size:15px;}
+  .fp-sk{font-size:9.5px;}
+  .fp-sk b{font-size:11px;}
+  .nb{font-size:12px;}
+  .seal .pp.sk{font-size:8px;}
+  .seal .pp.sk b{font-size:9.5px;}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation:none !important;transition:none !important;}
@@ -457,6 +506,17 @@ textarea{
   <p class="eyebrow">段位道場 風<span class="dot">●</span>ランダム模擬演奏</p>
   <h1>ランダム段位 お題生成所</h1>
   <p class="lede">難易度・ジャンル・可／不可の許容範囲を決めて「お題生成」を押すと、3曲ぶんの模擬段位が出てきます。※このページは非公式の段位道場風お題生成ツールです。</p>
+
+  <!-- 曲の番号を調べる -->
+  <section class="panel finder">
+    <h2 class="panel-head">曲の番号を調べる</h2>
+    <p class="finder-hint">曲名の一部を入れて検索すると、その曲がジャンルの上から・下から何番目か、曲スキップ何回で行けるかが分かります。結果をタップすると前後2曲も表示します。（曲リストはお題と同じものを使います）</p>
+    <div class="finder-row">
+      <input type="text" id="findInput" placeholder="例：さいたま / Flower / 千本桜" autocomplete="off">
+      <button class="find-btn" id="findBtn">検索</button>
+    </div>
+    <div id="findResults" class="find-results"></div>
+  </section>
 
   <!-- 設定 -->
   <section class="panel">
@@ -583,6 +643,23 @@ function genreTotals(){
   normalize(SONGS).forEach(s=>{ if(!(s.genre in t) || s.pos>t[s.genre]) t[s.genre]=s.pos; });
   return t;
 }
+// 曲スキップ（1回で7曲先へ）：n番目に行くのに必要な「スキップ回数」と「残り曲」
+const SKIP_STEP = 7;
+function skipParts(n){
+  const steps = Math.max(0, n - 1);
+  return { skips: Math.floor(steps / SKIP_STEP), extra: steps % SKIP_STEP };
+}
+function skipText(n){
+  const p = skipParts(n);
+  if(p.skips===0 && p.extra===0) return 'スキップ無し';
+  return `スキップ<b>${p.skips}</b>回` + (p.extra ? `＋${p.extra}曲` : '');
+}
+// ジャンルごとの並び（番号→曲名）。前後の曲を出すのに使う。表/裏は同じ番号＝同じ曲名。
+function genreOrder(){
+  const map={};
+  normalize(SONGS).forEach(s=>{ (map[s.genre] || (map[s.genre]={}))[s.pos] = s.name; });
+  return map;
+}
 
 /* ───────── スロット設定UIを描画 ───────── */
 function renderSlots(){
@@ -692,7 +769,9 @@ function renderOutput(){
         <button class="reroll" title="この曲だけ引き直す" data-idx="${idx}">⟳</button>
         <div class="seal">
           <span class="pp">上から<b>${s.pos}</b><small>番目</small></span>
+          <span class="pp sk">${skipText(s.pos)}</span>
           <span class="pp">下から<b>${bottom}</b><small>番目</small></span>
+          <span class="pp sk">${skipText(bottom)}</span>
         </div>
       </div>`;
   }).join('');
@@ -707,6 +786,68 @@ function renderOutput(){
   $('#scroll').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ───────── 曲の番号を調べる（部分一致） ───────── */
+function searchSongs(query){
+  const q = String(query).trim().toLowerCase();
+  if(!q) return [];
+  const map = new Map();
+  normalize(SONGS).forEach(s=>{
+    if(!String(s.name).toLowerCase().includes(q)) return;
+    const key = s.genre+'\u0001'+s.name+'\u0001'+s.pos;
+    if(!map.has(key)) map.set(key,{name:s.name, genre:s.genre, pos:s.pos, omote:null, ura:null});
+    const r = map.get(key);
+    if(s.ura) r.ura = s.level; else r.omote = s.level;
+  });
+  return [...map.values()];
+}
+function runFind(){
+  const box = $('#findResults');
+  const q = $('#findInput').value;
+  if(!q.trim()){ box.innerHTML = '<p class="find-empty">曲名の一部を入れて検索してください。</p>'; return; }
+  const list = searchSongs(q);
+  if(list.length===0){
+    box.innerHTML = `<p class="find-empty">「${escapeHtml(q.trim())}」に一致する曲は見つかりませんでした。</p>`;
+    return;
+  }
+  const totals = genreTotals();
+  const order = genreOrder();
+  list.sort((a,b)=> a.genre===b.genre ? a.pos-b.pos : a.genre.localeCompare(b.genre,'ja'));
+  const cap = 60;
+  const items = list.slice(0,cap).map(r=>{
+    const total = totals[r.genre] || r.pos;
+    const bottom = total - r.pos + 1;
+    const lvs = [];
+    if(r.omote!=null) lvs.push('☆'+r.omote);
+    if(r.ura!=null) lvs.push('裏☆'+r.ura);
+    // 前後2曲
+    const ord = order[r.genre] || {};
+    let nb='';
+    for(let p=r.pos-2; p<=r.pos+2; p++){
+      if(!ord[p]) continue;
+      nb += `<div class="nb${p===r.pos?' nb-cur':''}"><span class="nb-no">${p}</span><span class="nb-nm">${escapeHtml(ord[p])}</span></div>`;
+    }
+    return `<div class="find-item">
+      <div class="fi-head">
+        <div class="fi-text">
+          <div class="fi-main"><span class="fi-name">${escapeHtml(r.name)}</span><span class="fi-lv">${lvs.join(' / ')}</span></div>
+          <div class="fi-meta">${escapeHtml(r.genre)}（全${total}曲）・タップで前後表示</div>
+        </div>
+        <div class="fi-pos">
+          <div class="fp-row">上から<b>${r.pos}</b>番目<span class="fp-sk">${skipText(r.pos)}</span></div>
+          <div class="fp-row">下から<b>${bottom}</b>番目<span class="fp-sk">${skipText(bottom)}</span></div>
+        </div>
+      </div>
+      <div class="fi-neighbors">${nb}</div>
+    </div>`;
+  }).join('');
+  const note = list.length>cap ? `<p class="find-note">ほか ${list.length-cap} 件あります。もう少し絞り込んでください。</p>` : '';
+  box.innerHTML = items + note;
+  // タップで前後2曲を開閉
+  box.querySelectorAll('.find-item').forEach(it=>{
+    it.querySelector('.fi-head').addEventListener('click', ()=> it.classList.toggle('open'));
+  });
+}
 
 /* ───────── データ読み込み ───────── */
 function loadData(){
@@ -797,6 +938,8 @@ $('#goBtn').addEventListener('click', generate);
 $('#gasBtn').addEventListener('click', loadFromGas);
 $('#loadBtn').addEventListener('click', loadData);
 $('#fillBtn').addEventListener('click', dumpData);
+$('#findBtn').addEventListener('click', runFind);
+$('#findInput').addEventListener('keydown', e=>{ if(e.key==='Enter') runFind(); });
 
 // ページを開いたら裏でGASから最新版を取得
 loadFromGas();
