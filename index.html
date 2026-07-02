@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>曲検索・ランダム段位 お題生成所</title>
+<title>ランダム段位 お題生成所</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Yuji+Syuku&family=Shippori+Mincho:wght@500;600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
 
@@ -504,13 +504,13 @@ textarea{
 <body>
 <div class="wrap">
   <p class="eyebrow">段位道場 風<span class="dot">●</span>ランダム模擬演奏</p>
-  <h1>曲検索・ランダム段位 お題生成所</h1>
-  <p class="lede">曲検索：アーケードのジャンルの中でフォルダの上から何番目か、曲名で検索できます。/ランダム段位お題生成：難易度・ジャンル・可／不可の許容範囲を決めて「お題生成」を押すと、3曲ぶんの模擬段位が出てきます。※このページは非公式開発ツールです。</p>
+  <h1>ランダム段位 お題生成所</h1>
+  <p class="lede">難易度・ジャンル・可／不可の許容範囲を決めて「お題生成」を押すと、3曲ぶんの模擬段位が出てきます。※このページは非公式の段位道場風お題生成ツールです。</p>
 
   <!-- 曲の番号を調べる -->
   <section class="panel finder">
-    <h2 class="panel-head">曲の場所を調べる</h2>
-    <p class="finder-hint">曲名の一部を入れて検索すると、その曲がジャンルの上から・下から何番目か、曲スキップ何回で行けるかが分かります。結果をタップすると前後2曲も表示します。（曲リストはお題と同じものを使います）※個人のテスト開発ですので、機能の保証はいたしかねますことご了承ください。</p>
+    <h2 class="panel-head">曲の番号を調べる</h2>
+    <p class="finder-hint">曲名の一部を入れて検索すると、その曲がジャンルの上から・下から何番目か、曲スキップ何回で行けるかが分かります。結果をタップすると前後2曲も表示します。（曲リストはお題と同じものを使います）</p>
     <div class="finder-row">
       <input type="text" id="findInput" placeholder="例：さいたま / Flower / 千本桜" autocomplete="off">
       <button class="find-btn" id="findBtn">検索</button>
@@ -643,16 +643,27 @@ function genreTotals(){
   normalize(SONGS).forEach(s=>{ if(!(s.genre in t) || s.pos>t[s.genre]) t[s.genre]=s.pos; });
   return t;
 }
-// 曲スキップ（1回で7曲先へ）：n番目に行くのに必要な「スキップ回数」と「残り曲」
+// 曲スキップ計算。
+// リストは曲だけでなく「とじる」「ランダムに選ぶ」も1項目として並ぶ:
+//   [6曲] とじる [5曲] ランダムに選ぶ とじる [5曲] ランダムに選ぶ とじる …
+// なので「上からN曲目」をまずリスト上の項目位置に直し、
+// スキップ1回=7項目進むとして回数を出す（数曲の誤差は許容）。
 const SKIP_STEP = 7;
+function itemIndexOf(n){
+  if(n<=6) return n;                       // 先頭ブロック: 曲1..6 = 項目1..6
+  const b = Math.ceil((n-6)/5);            // 7曲目以降の5曲ブロック番号
+  const r = (n-6) - (b-1)*5;               // ブロック内で何曲目か(1..5)
+  return 7 + (b-1)*7 + r;                  // 6曲+とじる=7項目、以降ブロック7項目ずつ
+}
 function skipParts(n){
-  const steps = Math.max(0, n - 1);
+  const idx = itemIndexOf(n);
+  const steps = Math.max(0, idx - 1);
   return { skips: Math.floor(steps / SKIP_STEP), extra: steps % SKIP_STEP };
 }
 function skipText(n){
   const p = skipParts(n);
   if(p.skips===0 && p.extra===0) return 'スキップ無し';
-  return `スキップ<b>${p.skips}</b>回` + (p.extra ? `＋${p.extra}曲` : '');
+  return `スキップ<b>${p.skips}</b>回` + (p.extra ? `＋${p.extra}個` : '');
 }
 // ジャンルごとの並び（番号→曲名）。前後の曲を出すのに使う。表/裏は同じ番号＝同じ曲名。
 function genreOrder(){
